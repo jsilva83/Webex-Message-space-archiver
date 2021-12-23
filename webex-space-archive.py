@@ -22,24 +22,26 @@ import re
 import time
 import sys
 import os
-import shutil # for file-download with requests
-import math   # for converting bytes to KB/MB/GB
+import shutil  # for file-download with requests
+import math  # for converting bytes to KB/MB/GB
 import string
 from pathlib import Path
 import configparser
+
 try:
     assert sys.version_info[0:2] >= (3, 6)
 except:
-    print("\n\n **ERROR** Minimum Python version is 3.6. Please visit this site to\n           install a newer Python version: https://www.python.org/downloads/ \n\n")
+    print("\n\n **ERROR** Minimum Python version is 3.6. Please visit this site to\n           install "
+          "a newer Python version: https://www.python.org/downloads/ \n\n")
     exit()
 try:
     import requests
 except ImportError:
-    print("\n\n **ERROR** Missing library 'requests'. Please visit the following site to\n           install 'requests': http://docs.python-requests.org/en/master/user/install/ \n\n")
+    print("\n\n **ERROR** Missing library 'requests'. Please visit the following site to\n           install "
+          "'requests': http://docs.python-requests.org/en/master/user/install/ \n\n")
     exit()
 
-
-#--------- DO NOT CHANGE ANYTHING BELOW ---------
+# --------- DO NOT CHANGE ANYTHING BELOW ---------
 __author__ = "Dirk-Jan Uittenbogaard"
 __email__ = "duittenb@cisco.com"
 __version__ = "0.21"
@@ -56,10 +58,12 @@ myMemberList = dict()
 myErrorList = list()
 downloadAvatarCount = 1
 
-def beep(count): # PLAY SOUND (for errors)
-    for x in range(0,count):
+
+def beep(count):  # PLAY SOUND (for errors)
+    for x in range(0, count):
         print(chr(7), end="", flush=True)
     return
+
 
 print("\n\n\n========================= START =========================")
 config = configparser.ConfigParser(allow_no_value=True)
@@ -69,7 +73,8 @@ if os.path.isfile("./" + configFile):
     try:
         config.read('./' + configFile)
         if config.has_option('Archive Settings', 'downloadfiles'):
-            print(" *** NOTE!\n     Please change the key 'downloadfiles' in your .ini file to 'download'\n     or rename your .ini file and run this script to generate a new .ini file\n\n")
+            print(" *** NOTE!\n     Please change the key 'downloadfiles' in your .ini file to "
+                  "'download'\n     or rename your .ini file and run this script to generate a new .ini file\n\n")
             beep(3)
             downloadFiles = config['Archive Settings']['downloadfiles'].lower().strip()
         else:
@@ -79,15 +84,15 @@ if os.path.isfile("./" + configFile):
         else:
             sortOldNew = False
         myToken = config['Archive Settings']['mytoken']
-        if config.has_option('Archive Settings', 'myroom'): # Added to deal with old naming in .ini files
+        if config.has_option('Archive Settings', 'myroom'):  # Added to deal with old naming in .ini files
             myRoom = config['Archive Settings']['myroom']
-        if config.has_option('Archive Settings', 'myspaceid'): # Replacing the old 'myroom' setting
+        if config.has_option('Archive Settings', 'myspaceid'):  # Replacing the old 'myroom' setting
             myRoom = config['Archive Settings']['myspaceid']
         outputFileName = config['Archive Settings']['outputfilename']
         maxTotalMessages = config['Archive Settings']['maxtotalmessages']
         if maxTotalMessages:
-            if 'd' in maxTotalMessages: # Example: maxTotalMessages = 60d = 60 days.
-                msgMaxAge = int(maxTotalMessages.replace("d",""))
+            if 'd' in maxTotalMessages:  # Example: maxTotalMessages = 60d = 60 days.
+                msgMaxAge = int(maxTotalMessages.replace("d", ""))
                 maxTotalMessages = 999999
             else:
                 maxTotalMessages = int(maxTotalMessages)
@@ -99,15 +104,18 @@ if os.path.isfile("./" + configFile):
         outputToJson = config['Archive Settings']['outputjson']
     except Exception as e:  # Error: keys missing from .ini file
         print(f" **ERROR** reading webexspacearchive-config.ini file settings.\n    ERROR: {e}")
-        print("    Check if your .ini file contains the following keys: \n        download, sortoldnew, mytoken, myspaceid, outputfilename, useravatar, maxtotalmessages, outputjson")
-        print("    Rename your .ini file, re-run this script (generating correct file)\n    and put your settings in the new .ini file")
+        print("    Check if your .ini file contains the following keys: \n        download, sortoldnew, "
+              "mytoken, myspaceid, outputfilename, useravatar, maxtotalmessages, outputjson")
+        print("    Rename your .ini file, re-run this script (generating correct file)\n    and put your "
+              "settings in the new .ini file")
         print(" ---------------------------------------\n\n")
         beep(3)
         exit()
-elif os.path.isfile("./" + configFile.replace("webexspacearchive-config","webexteamsarchive-config")):
-        print(f" **ERROR** OLD config filename found!\n   RENAME 'webexteamsarchive-config.ini' to 'webexspacearchive-config.ini' and retry \n\n")
-        beep(3)
-        exit()
+elif os.path.isfile("./" + configFile.replace("webexspacearchive-config", "webexteamsarchive-config")):
+    print(f" **ERROR** OLD config filename found!\n   RENAME 'webexteamsarchive-config.ini' to "
+          f"'webexspacearchive-config.ini' and retry \n\n")
+    beep(3)
+    exit()
 
 else:
     # ----------- CONFIG FILE: CREATE new config file because it does not exist
@@ -117,10 +125,13 @@ else:
         config.set('Archive Settings', '; Your Cisco Webex developer token (NOTE: tokens are valid for 12 hours!)')
         config.set('Archive Settings', 'mytoken', '__YOUR_TOKEN_HERE__')
         config.set('Archive Settings', ';')
-        config.set('Archive Settings', '; Space ID: Enter your token above and run this script followed by a search argument')
-        config.set('Archive Settings', ';     "archivescript.py searchstring" - returns lists of spaces matching "searchstring"')
+        config.set('Archive Settings', '; Space ID: Enter your token above and run this script followed by a '
+                                       'search argument')
+        config.set('Archive Settings', ';     "archivescript.py searchstring" - returns lists of spaces matching '
+                                       '"searchstring"')
         config.set('Archive Settings', ';     OR: go to https://developer.webex.com/endpoint-rooms-get.html')
-        config.set('Archive Settings', ';         "login, API reference, rooms, list all rooms", set "max" to 900 and run ')
+        config.set('Archive Settings', ';         "login, API reference, rooms, list all rooms", set "max" to '
+                                       '900 and run ')
         config.set('Archive Settings', 'myspaceid', '__YOUR_SPACE_ID_HERE__')
         config.set('Archive Settings', '; ')
         config.set('Archive Settings', '; ')
@@ -170,7 +181,8 @@ else:
         print(" ** ERROR ** creating config file")
         print(f"             Error message: {e}")
         beep(3)
-    print(f"\n\n ------------------------------------------------------------------ \n ** WARNING ** Config file '{configFile}' does not exist.  \n               Creating empty configuration file. \n --> EDIT the configuration in this file and re-run this script.\n ------------------------------------------------------------------\n\n")
+    print(
+        f"\n\n ------------------------------------------------------------------ \n ** WARNING ** Config file '{configFile}' does not exist.  \n               Creating empty configuration file. \n --> EDIT the configuration in this file and re-run this script.\n ------------------------------------------------------------------\n\n")
     # STOP - the script because you need a valid configuration file first
     exit()
 
@@ -202,11 +214,10 @@ else:
     else:
         maxMessageString = str(msgMaxAge) + " days"
     print(f"    download: {downloadFiles} - Max messages: {maxMessageString} - Avatars: {userAvatar} ")
-if len(goExitError) > 76:   # length goExitError = 66. If error: it is > 76 characters --> print errors + exit
+if len(goExitError) > 76:  # length goExitError = 66. If error: it is > 76 characters --> print errors + exit
     print(goExitError + "\n ------------------------------------------------------------------\n\n")
     beep(3)
     exit()
-
 
 # ----------------------------------------------------------------------------------------
 #   HTML header code containing images, styling info (CSS)
@@ -512,6 +523,7 @@ blockquote {
 </head><body><div id='top'></div><button onclick="topFunction()" id="myBtn" title="Go to top">&uarr;</button>
 """
 
+
 # ----------------------------------------------------------------------------------------
 #   FUNCTIONS
 # ----------------------------------------------------------------------------------------
@@ -522,13 +534,14 @@ blockquote {
 #          Webex messages are stored with a UTC date. With this information
 #          we can update the UTC dates from messages to your local timezone dates.
 def timeDeltaWithUTC():
-    dateNOW = datetime.datetime.now()       # your current time
-    dateUTC = datetime.datetime.utcnow()    # the  current UTC time (used for messages)
-    if dateNOW > dateUTC:   # On a map you're RIGHT of UTC
-       UTChourDelta = round((dateNOW-dateUTC).seconds / 3600, 1)       #print("   A>B")
-    else:                   # On a map you're LEFT of UTC
-       UTChourDelta = round((dateUTC-dateNOW).seconds / 3600, 1) * -1
+    dateNOW = datetime.datetime.now()  # your current time
+    dateUTC = datetime.datetime.utcnow()  # the  current UTC time (used for messages)
+    if dateNOW > dateUTC:  # On a map you're RIGHT of UTC
+        UTChourDelta = round((dateNOW - dateUTC).seconds / 3600, 1)  # print("   A>B")
+    else:  # On a map you're LEFT of UTC
+        UTChourDelta = round((dateUTC - dateNOW).seconds / 3600, 1) * -1
     return UTChourDelta
+
 
 # ----------------------------------------------------------------------------------------
 # FUNCTION convert date to format displayed with each message. Used in HTML generation.
@@ -565,7 +578,7 @@ def timedifference(newdate, previousdate):
 #           (used when setting max messages to XX days instead of number of msgs)
 def timedifferencedays(msgdate):
     FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
-    tdelta = datetime.datetime.today() - datetime.datetime.strptime(msgdate,FMT)
+    tdelta = datetime.datetime.today() - datetime.datetime.strptime(msgdate, FMT)
     return tdelta.days
 
 
@@ -578,7 +591,9 @@ def convertURL(inputtext):
     if len(urls) > 0:
         for replaceThisURL in urls:
             replaceNewURL = replaceThisURL[0] + "://" + replaceThisURL[1] + replaceThisURL[2]
-            outputtext = outputtext.replace(replaceNewURL, "<a href='" + str(replaceNewURL) + "' target='_blank'>" + str(replaceNewURL) + "</a>")
+            outputtext = outputtext.replace(replaceNewURL,
+                                            "<a href='" + str(replaceNewURL) + "' target='_blank'>" + str(
+                                                replaceNewURL) + "</a>")
     return outputtext
 
 
@@ -593,7 +608,7 @@ def convertMarkdownURL(msgtext, whichreplace):
         matches = re.finditer(regex, msgtext, re.MULTILINE)
         matchDict = dict()  # create dictionary with match details so I can _reverse_ replace
         for matchNum, match in enumerate(matches, start=1):
-            matchDict[matchNum] = [match.start(),match.end()]
+            matchDict[matchNum] = [match.start(), match.end()]
         for i in sorted(matchDict.keys(), reverse=True):
             msgtext = msgtext[0:matchDict[i][0]] + " target='_blank'" + msgtext[matchDict[i][1]:]
     except:
@@ -613,7 +628,7 @@ def get_memberships(mytoken, myroom, maxmembers):
             result = requests.get('https://webexapis.com/v1/memberships', headers=headers, params=payload)
             if "Link" in result.headers:  # there's MORE members
                 headerLink = result.headers["Link"]
-                myCursor = headerLink[headerLink.find("cursor=")+len("cursor="):headerLink.rfind("==>")]
+                myCursor = headerLink[headerLink.find("cursor=") + len("cursor="):headerLink.rfind("==>")]
                 payload = {'roomId': myroom, 'max': maxmembers, 'cursor': myCursor}
                 resultjson += result.json()["items"]
                 continue
@@ -621,12 +636,12 @@ def get_memberships(mytoken, myroom, maxmembers):
                 resultjson += result.json()["items"]
                 print(f"          Number of space members: {len(resultjson)}")
                 break
-        except requests.exceptions.RequestException as e: # For problems like SSLError/InvalidURL
+        except requests.exceptions.RequestException as e:  # For problems like SSLError/InvalidURL
             if e.status_code == 429:
                 print("          Code 429, waiting for : " + str(sleepTime) + " seconds: ", end='', flush=True)
                 for x in range(0, sleepTime):
                     time.sleep(1)
-                    print(".", end='', flush=True) # Progress indicator
+                    print(".", end='', flush=True)  # Progress indicator
             else:
                 print(" *** ERROR *** getting space members. Error message: {result.status_code}\n {e}")
                 break
@@ -646,13 +661,14 @@ def get_messages(mytoken, myroom, myMaxMessages):
         try:
             result = requests.get('https://webexapis.com/v1/messages', headers=headers, params=payload)
             if result.status_code != 200 and result.status_code != 429:
-                print(" *** ERROR *** There is a problem retrieving specific messages. You could try to lower the max_messages variable in the .py file until it works\n\n")
+                print(
+                    " *** ERROR *** There is a problem retrieving specific messages. You could try to lower the max_messages variable in the .py file until it works\n\n")
                 beep(3)
                 exit()
             messageCount += len(result.json()["items"])
             progress_counter += 1
             sys.stdout.write('\r')
-            sys.stdout.write("          %d %s " % (messageCount, '*'*progress_counter))
+            sys.stdout.write("          %d %s " % (messageCount, '*' * progress_counter))
             sys.stdout.flush()
             if "Link" in result.headers and messageCount < maxTotalMessages:  # there's MORE messages
                 resultjsonmessages = resultjsonmessages + result.json()["items"]
@@ -663,7 +679,8 @@ def get_messages(mytoken, myroom, myMaxMessages):
                     if msgAge > msgMaxAge:
                         print("          max messages reached (>" + str(msgMaxAge) + " days old)")
                         # NOW I set maxTotalMessages to the last msg index that should be included, based on msg age in days.
-                        maxTotalMessages = next((index for (index,d) in enumerate(resultjsonmessages) if timedifferencedays(d["created"]) > msgMaxAge), 99999)
+                        maxTotalMessages = next((index for (index, d) in enumerate(resultjsonmessages) if
+                                                 timedifferencedays(d["created"]) > msgMaxAge), 99999)
                         break
                 myBeforeMessage = result.headers.get('Link').split("beforeMessage=")[1].split(">")[0]
                 payload = {'roomId': myroom, 'max': myMaxMessages, 'beforeMessage': myBeforeMessage}
@@ -672,13 +689,14 @@ def get_messages(mytoken, myroom, myMaxMessages):
                 resultjsonmessages = resultjsonmessages + result.json()["items"]
                 if msgMaxAge != 0:
                     msgAge = timedifferencedays(result.json()["items"][-1]["created"])
-                    lastMsgLocation = next((index for (index,d) in enumerate(resultjsonmessages) if timedifferencedays(d["created"]) > msgMaxAge), 99999)
+                    lastMsgLocation = next((index for (index, d) in enumerate(resultjsonmessages) if
+                                            timedifferencedays(d["created"]) > msgMaxAge), 99999)
                     maxTotalMessages = lastMsgLocation
                 print(f" FINISHED total messages: {messageCount}")
-                if "Link" in result.headers:   # There ARE more messages but the maxTotalMessages has been reached
+                if "Link" in result.headers:  # There ARE more messages but the maxTotalMessages has been reached
                     print(f"          Reached configured maximum # messages ({maxTotalMessages})")
                 break
-        except requests.exceptions.RequestException as e: # A serious problem, like an SSLError or InvalidURL
+        except requests.exceptions.RequestException as e:  # A serious problem, like an SSLError or InvalidURL
             print(f"          EXCEPT status_code: {e.status_code}")
             print(f"          EXCEPT text: {e.text}")
             print(f"          EXCEPT headers: {e.headers}")
@@ -686,7 +704,7 @@ def get_messages(mytoken, myroom, myMaxMessages):
                 print("          Code 429, waiting for : " + str(sleepTime) + " seconds: ", end='', flush=True)
                 for x in range(0, sleepTime):
                     time.sleep(1)
-                    print(".", end='', flush=True) # Progress indicator
+                    print(".", end='', flush=True)  # Progress indicator
             else:
                 print(f"          EXCEPT ELSE e: {e}     e.code: {e.code}")
                 break
@@ -696,12 +714,14 @@ def get_messages(mytoken, myroom, myMaxMessages):
         exit()
     return resultjsonmessages[0:maxTotalMessages]
 
+
 # ----------------------------------------------------------------------------------------
 # FUNCTION to turn Space name into a valid filename string
 def format_filename(s):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     filename = ''.join(c for c in s if c in valid_chars)
     return filename
+
 
 # ----------------------------------------------------------------------------------------
 # FUNCTION get the Space-name (Used in the header + optionally for the filename)
@@ -710,7 +730,7 @@ def get_roomname(mytoken, myroom):
     returndata = "webex-space-archive"
     try:
         result = requests.get('https://webexapis.com/v1/rooms/' + myroom, headers=headers)
-        if result.status_code == 401:   # WRONG ACCESS TOKEN
+        if result.status_code == 401:  # WRONG ACCESS TOKEN
             print("__________________________ ERROR ________________________")
             print("   Please check your Access Token in the .ini file.")
             print("       Note that your Access Token is only valid for 12 hours.")
@@ -720,18 +740,24 @@ def get_roomname(mytoken, myroom):
             beep(3)
             exit()
         elif result.status_code == 404:
-            print("       **ERROR** Check if the Space ID in your .ini file is correct.\n         Find the Space ID? Run this script with the space name as parameter!")
+            print(
+                "       **ERROR** Check if the Space ID in your .ini file is correct.\n        "
+                " Find the Space ID? Run this script with the space name as parameter!")
             print("_________________________ STOPPED _______________________\n\n\n")
             beep(3)
             exit()
         elif result.status_code != 200:
-            print(f"       **ERROR** Unknown Error occurred. status code: {result.status_code}\n       Info: \n {result.text}\n\n")
+            print(
+                f"       **ERROR** Unknown Error occurred. status code: {result.status_code}\n       "
+                f"Info: \n {result.text}\n\n")
             beep(3)
             exit()
         elif result.status_code == 200:
             returndata = result.json()['title']
     except Exception as e:
-        print(f"       **ERROR** #1 get_roomname API call status_code: {result.status_code}\n status_text: {result.text}\n Exception {e}\n\n")
+        print(
+            f"       **ERROR** #1 get_roomname API call status_code: {result.status_code}\n "
+            f"status_text: {result.text}\n Exception {e}\n\n")
         beep(3)
         exit()
     return str(returndata.strip())
@@ -741,7 +767,7 @@ def get_roomname(mytoken, myroom):
 # FUNCTION get your own details. Name: displayed in the header.
 #          Also used to get your email domain: mark _other_ domains as 'external' messages
 def get_me(mytoken):
-    header = {'Authorization': "Bearer " + mytoken,'content-type': 'application/json; charset=utf-8'}
+    header = {'Authorization': "Bearer " + mytoken, 'content-type': 'application/json; charset=utf-8'}
     result = requests.get(url='https://webexapis.com/v1/people/me', headers=header)
     return result.json()
 
@@ -764,7 +790,7 @@ def process_Files(fileData, fileDate):
     global myErrorList
     filelist = list()
     for url in fileData:
-        headers = {"Authorization": f"Bearer {myToken}","Accept-Encoding": ""}
+        headers = {"Authorization": f"Bearer {myToken}", "Accept-Encoding": ""}
         r = requests.head(url, headers=headers)
         if r.status_code == 404:  # Item must have been deleted since url was retrieved
             continue
@@ -773,7 +799,7 @@ def process_Files(fileData, fileDate):
             # Files with no name or just spaces: fix so they can still be downloaded:
             if len(filename) < 1 or filename.isspace():
                 filename = "unknown-filename"
-            if filename == ('+' * (int(len(filename)/len('+'))+1))[:len(filename)]:
+            if filename == ('+' * (int(len(filename) / len('+')) + 1))[:len(filename)]:
                 filename = "unknown-filename"
                 beep(1)
         except Exception as e:
@@ -781,7 +807,7 @@ def process_Files(fileData, fileDate):
             myErrorList.append("def process_Files Header 'content-disposition' error for url: " + url)
         filename = format_filename(filename)
         filesize = convert_size(int(r.headers['Content-Length']))
-        fileextension = os.path.splitext(filename)[1][1:].replace("\"","")
+        fileextension = os.path.splitext(filename)[1][1:].replace("\"", "")
         filenamepart = os.path.splitext(filename)[0]
         if int(r.headers['Content-Length']) <= 0:
             # Not downloading 0 Byte files, only show the filename
@@ -791,11 +817,11 @@ def process_Files(fileData, fileDate):
             # No file downloading --> just get the filename + size
             filelist.append(filename + "###" + filesize)
             continue
-        if "image" in downloadFiles and fileextension.lower() not in ['png', 'jpg','bmp', 'gif', 'tif', 'jpeg']:
+        if "image" in downloadFiles and fileextension.lower() not in ['png', 'jpg', 'bmp', 'gif', 'tif', 'jpeg']:
             # File is not an image --> just get the filename + size
             filelist.append(filename + "###" + filesize)
             continue
-        if fileextension.lower() in ['png', 'jpg','bmp', 'gif', 'tif', 'jpeg']:
+        if fileextension.lower() in ['png', 'jpg', 'bmp', 'gif', 'tif', 'jpeg']:
             # File is an image
             subfolder = "/images/"
         else:
@@ -803,11 +829,12 @@ def process_Files(fileData, fileDate):
             subfolder = "/files/"
         # CHECK if filename exists, if yes, add "-x" where x is a counter
         if downloadFiles in ['images', 'files']:
-            if os.path.isfile(myOutputFolder + subfolder + filename): # File exist? add '-<number>' to the filename.
+            if os.path.isfile(myOutputFolder + subfolder + filename):  # File exist? add '-<number>' to the filename.
                 filepartName = filenamepart
                 filepartExtension = "." + fileextension
                 filepartCounter = 1
-                while os.path.isfile(myOutputFolder + subfolder + filepartName + "-" + str(filepartCounter) + filepartExtension):
+                while os.path.isfile(
+                        myOutputFolder + subfolder + filepartName + "-" + str(filepartCounter) + filepartExtension):
                     filepartCounter += 1
                 filename = filepartName + "-" + str(filepartCounter) + filepartExtension
         # DOWNLOAD file
@@ -827,7 +854,7 @@ def process_Files(fileData, fileDate):
         except Exception as e:
             print(f"----- ERROR:  {e}")
             myErrorList.append("def process_Files download failed for file: " + filename)
-        print(".", end='', flush=True) # Progress indicator
+        print(".", end='', flush=True)  # Progress indicator
     return filelist
 
 
@@ -837,15 +864,16 @@ def download_avatars(avatardictionary):  # dictionary:  userId,avatarUrl
     global downloadAvatarCount
     global myErrorList
     # Remove previous error messages (**DJ** does this work when the avatar download fails after 4 tries?)
-    myErrorList = [ elem for elem in myErrorList if "def download_avatars download failed" not in elem]
+    myErrorList = [elem for elem in myErrorList if "def download_avatars download failed" not in elem]
     retryDictionary = dict()
     for key, value in avatardictionary.items():
-        filename = "".join(re.findall(r'[A-Za-z0-9]+', key))+".jpg"
+        filename = "".join(re.findall(r'[A-Za-z0-9]+', key)) + ".jpg"
         try:
             r = requests.get(value, stream=True)
         except Exception as e:
-            myErrorList.append("def download_avatars download failed (attempt #" + str(downloadAvatarCount) + ") for user: " + key + " with URL: " + value + " Error: " + str(e))
-            retryDictionary[key] = value # Create temp dictionary for failed avatar downloads - retry later
+            myErrorList.append("def download_avatars download failed (attempt #" + str(
+                downloadAvatarCount) + ") for user: " + key + " with URL: " + value + " Error: " + str(e))
+            retryDictionary[key] = value  # Create temp dictionary for failed avatar downloads - retry later
             print("X", end='', flush=True)  # Progress indicator
             continue
         if r.status_code == 200:
@@ -854,7 +882,7 @@ def download_avatars(avatardictionary):  # dictionary:  userId,avatarUrl
                 shutil.copyfileobj(r.raw, f)
         else:
             print(f"\n**ERROR** download_avatars RESULT: {r.status_code}\n")
-    if len(retryDictionary) > 0 and downloadAvatarCount < 4: # Try failed avatar downloads max 3 times
+    if len(retryDictionary) > 0 and downloadAvatarCount < 4:  # Try failed avatar downloads max 3 times
         myErrorList.append("             Avatar download attempt nr. " + str(downloadAvatarCount))
         time.sleep(1)
         downloadAvatarCount += 1
@@ -866,14 +894,17 @@ def download_avatars(avatardictionary):  # dictionary:  userId,avatarUrl
 #          only called when userAvatar = 'download' or 'link'
 def get_persondetails(mytoken, personlist):
     headers = {'Authorization': 'Bearer ' + mytoken, 'content-type': 'application/json; charset=utf-8'}
-    personlist = str(personlist)[2:-2].replace("', '",",")
+    personlist = str(personlist)[2:-2].replace("', '", ",")
     payload = {'id': personlist}
     resultjsonmessages = list()
     while True:
         try:
             result = requests.get('https://webexapis.com/v1/people', headers=headers, params=payload)
             if result.status_code != 200 and result.status_code != 429:
-                print(f"     ** ERROR ** def get_persondetails. result.status_code: {result.status_code}\n        headers: {headers}\n        personlist: >>{personlist.strip()}<<\n        result.text: {result.text}")
+                print(
+                    f"     ** ERROR ** def get_persondetails. result.status_code: {result.status_code}\n        "
+                    f"headers: {headers}\n        personlist: >>{personlist.strip()}<<\n        "
+                    f"result.text: {result.text}")
             resultjsonmessages = resultjsonmessages + result.json()["items"]
             break
         except requests.exceptions.RequestException as e:
@@ -883,7 +914,7 @@ def get_persondetails(mytoken, personlist):
                 print("          Code 429, waiting for : " + str(sleepTime) + " seconds: ", end='', flush=True)
                 for x in range(0, sleepTime):
                     time.sleep(1)
-                    print(".", end='', flush=True) # Progress indicator
+                    print(".", end='', flush=True)  # Progress indicator
             else:
                 break
     return resultjsonmessages
@@ -893,16 +924,16 @@ def get_persondetails(mytoken, personlist):
 # FUNCTION download ALL SPACES - when you call this script with a parameter, it will
 #          search all of your spaces and return spaces that match your search string
 def get_searchspaces(mytoken, searchstring):
-    max_spaces_to_retrieve = 500 # _per_ API call
+    max_spaces_to_retrieve = 500  # _per_ API call
     headers = {'Authorization': 'Bearer ' + mytoken, 'content-type': 'application/json; charset=utf-8'}
     payload = {'max': max_spaces_to_retrieve}
     search_result_group = dict()
     search_result_direct = dict()
     resultjson = list()
-    print(" ", end='', flush=True) # Progress indicator
+    print(" ", end='', flush=True)  # Progress indicator
     while True:
         try:
-            print(".", end='', flush=True) # Progress indicator
+            print(".", end='', flush=True)  # Progress indicator
             result = requests.get('https://webexapis.com/v1/rooms', headers=headers, params=payload)
             if result.status_code == 401:  # WRONG ACCESS TOKEN
                 print("    -------------------------- ERROR ------------------------")
@@ -915,7 +946,7 @@ def get_searchspaces(mytoken, searchstring):
                 exit()
             if "Link" in result.headers:  # there's MORE members
                 headerLink = result.headers["Link"]
-                myCursor = headerLink[headerLink.find("cursor=")+len("cursor="):headerLink.rfind(">")]
+                myCursor = headerLink[headerLink.find("cursor=") + len("cursor="):headerLink.rfind(">")]
                 payload = {'max': max_spaces_to_retrieve, 'cursor': myCursor}
                 if "items" in result.json():
                     try:
@@ -932,7 +963,7 @@ def get_searchspaces(mytoken, searchstring):
                     print(f" **ERROR** get_searchspaces no Link: {e}")
                 print(f" Total number of spaces: {len(resultjson)}")
                 break
-        except requests.exceptions.RequestException as e: # A serious problem, like an SSLError or InvalidURL
+        except requests.exceptions.RequestException as e:  # A serious problem, like an SSLError or InvalidURL
             if e.status_code == 429:
                 print("          Code 429, waiting for : " + str(sleepTime) + " seconds: ", end='', flush=True)
                 for x in range(0, sleepTime):
@@ -948,7 +979,7 @@ def get_searchspaces(mytoken, searchstring):
                     search_result_direct[spaces['id']] = spaces['title']
         except:
             continue
-    return search_result_group,search_result_direct
+    return search_result_group, search_result_direct
 
 
 # ----------------------------------------------------------------------------------------
@@ -961,7 +992,7 @@ def create_threading_order_table(WebexMessages):
         if 'parentId' not in msg:  # NOT a threaded message
             msgOrderTable[("%.3f" % msgOrderIndex)] = msg['id']
             msgOrderIndex = msgOrderIndex + 1.000
-        else:   # THREADED MESSAGE!
+        else:  # THREADED MESSAGE!
             # 1 get msgOrderIndex for parent ID in msgOrderTable.
             try:
                 newOrderIndex = float(list(msgOrderTable.keys())[list(msgOrderTable.values()).index(msg['parentId'])])
@@ -981,9 +1012,10 @@ def create_threading_order_table(WebexMessages):
 
 # ----------------------------------------------------------------------------------------
 # FUNCTION that writes data to a file - not used right now
-def write_to_file(data,filename):
+def write_to_file(data, filename):
     with open("./" + filename, 'w', encoding='utf-8') as f:
         print(data, file=f)
+
 
 # ----------------------------------------------------------------------------------------
 # FUNCTION that tells you if a message is a card or not. Input: message json
@@ -997,15 +1029,19 @@ def card_or_not(message_json):
 
 # ----------------------------------------------------------------------------------------
 # FUNCTIONs that help me analyze what takes the most time
-performanceReport  = " ______________________________________________________\n"
+performanceReport = " ______________________________________________________\n"
 performanceReport += "   Performance Report - space archive script \n"
 performanceReport += " ______________________________________________________"
 _start_time = time.time()
+
+
 def startTimer():
     global _start_time
     _start_time = time.time()
+
+
 def stopTimer(description):
-    t_sec = round(time.time() - _start_time,2)
+    t_sec = round(time.time() - _start_time, 2)
     global performanceReport
     performanceReport += f"\n {t_sec:7.1f} " + description
 
@@ -1028,7 +1064,6 @@ if len(sys.argv) > 1:
     print("_________________________________________________________\n\n")
     exit()
 
-
 # =====  GET SPACE NAME ========================================================
 #   used for the space name in the header and optionally the output foldername
 startTimer()
@@ -1046,8 +1081,6 @@ if outputFileName == "":
     outputFileName = format_filename(roomName)
 myOutputFolder = outputFileName
 
-
-
 # =====  GET MESSAGES ==========================================================
 startTimer()
 print(" #2 --- Get MESSAGES")
@@ -1060,7 +1093,6 @@ except Exception as e:
     exit()
 stopTimer("get messages")
 
-
 # ===== CREATE USERLIST ========================================================
 #   Collect only userId's of users who wrote a message. For those users we will
 #   retrieve details & download/link avatars
@@ -1071,13 +1103,11 @@ for myUser in WebexMessages:
         uniqueUserIds.append(myUser['personId'])
 stopTimer("get unique user ids")
 
-
-
 # =====  GET MEMBER NAMES ======================================================
 # myMembers used # of space members (stats).
 # myMemberList is used to get the displayName of users (msg only show email address - personEmail)
 startTimer()
-print(" #3 --- Get MEMBER List") # Put ALL members in a dictionary that contains: "email + fullname"
+print(" #3 --- Get MEMBER List")  # Put ALL members in a dictionary that contains: "email + fullname"
 try:
     myMembers = get_memberships(myToken, myRoom, 800)
     for members in myMembers:
@@ -1091,14 +1121,12 @@ except Exception as e:
     beep(1)
 stopTimer("get memberlist")
 
-
-
 # =====  CREATE FOLDERS FOR ATTACHMENTS & AVATARS ==============================
 startTimer()
 print(f" #4a--- Create FOLDER for HTML. Download files? {downloadFiles}")
 if not os.path.exists(myOutputFolder):
     print(f"          folder does NOT exist: {myOutputFolder}")
-else:   # check if folder-01 exists, if yes, check if folder-02 exists, etc.
+else:  # check if folder-01 exists, if yes, check if folder-02 exists, etc.
     folderCounter = 1
     print(f"          folder EXISTS  : {myOutputFolder}")
     print(f"          checking folder: " + myOutputFolder + "-" + "{:02d}".format(folderCounter))
@@ -1116,28 +1144,26 @@ if downloadFiles == "images":
     os.makedirs(myOutputFolder + "/images/")
 stopTimer("create folders")
 
-
-
 # =====  GET MEMBER AVATARS ====================================================
 startTimer()
 if userAvatar == "link" or userAvatar == "download":
     print(" #4b--- MEMBER Avatars: collect avatar Data (" + str(len(uniqueUserIds)) + ")  ", end='', flush=True)
     userAvatarDict = dict()  # --> userAvatarDict[your@email.com] = "https://webex_message_avatarurl"
-    x=0
-    y=len(uniqueUserIds)
+    x = 0
+    y = len(uniqueUserIds)
     if 50 > y:
         chunksize = y
     else:
         chunksize = 50
     if y < 50:
         chunksize = y
-    for i in range(x,y,chunksize): # - LOOPING OVER MemberDataList in chunks of xx
-        x=i
-        person_list = get_persondetails(myToken, uniqueUserIds[x:x+chunksize])
+    for i in range(x, y, chunksize):  # - LOOPING OVER MemberDataList in chunks of xx
+        x = i
+        person_list = get_persondetails(myToken, uniqueUserIds[x:x + chunksize])
         print(".", end='', flush=True)  # Progress indicator
         for persondetails in person_list:
             try:
-                userAvatarDict[persondetails['id']] = persondetails['avatar'].replace("~1600","~80")
+                userAvatarDict[persondetails['id']] = persondetails['avatar'].replace("~1600", "~80")
             except:
                 pass
     print(".", flush=False)
@@ -1145,11 +1171,11 @@ stopTimer("get avatars")
 
 startTimer()
 if userAvatar == "link" or userAvatar == "download":
-    print(" #4c--- MEMBER Avatars: downloading avatar files for " + str(len(userAvatarDict)) + " members)  ", end='', flush=True)
+    print(" #4c--- MEMBER Avatars: downloading avatar files for " + str(len(userAvatarDict)) + " members)  ", end='',
+          flush=True)
     if userAvatar == "download":
         download_avatars(userAvatarDict)
 stopTimer("download avatars")
-
 
 # =====  GET MY DETAILS ========================================================
 startTimer()
@@ -1162,7 +1188,6 @@ try:
 except Exception as e:
     print(f"\n #5 --- Get my details: **ERROR** : {e}")
 stopTimer("get my details")
-
 
 # =====  SET/CREATE VARIABLES ==================================================
 tocList = ""
@@ -1177,8 +1202,6 @@ previousMsgCreated = ""
 UTChourDelta = timeDeltaWithUTC()
 TimezoneName = str(time.tzname)
 
-
-
 # ====== WRITE JSON data to a FILE =============================================
 #   (optional) Write JSON to a FILE to be used as input (not using the Webex Message APIs)
 startTimer()
@@ -1187,28 +1210,29 @@ if outputToJson == "yes" or outputToJson == "both" or outputToJson == "json":
         json.dump(WebexMessages, f)
 stopTimer("output to json")
 
-
-
 # ======  GENERATE HTML HEADER =================================================
 #
 print(f" #6 --- Generate HTML header")
-htmlheader += f"<div class='cssRoomName'>   {roomName}&nbsp;&nbsp;&nbsp;<br><span style='float:left;margin-top:8px;font-size:10px;color:#fff'> CREATED: <span style='color:yellow'>{currentDate}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Generated by: <span style='color:yellow'>{myName}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Message timezone: <span style='color:yellow'>{TimezoneName}</span>&nbsp;&nbsp;&nbsp; version:  {version}&nbsp;&nbsp;&nbsp;<br>Sort old-new: <span style='color:yellow'>" + str(sortOldNew).replace("True", "yes (default)").replace("False", "no") + f"</span> &nbsp;&nbsp; Max messages: <span style='color:yellow'> {maxMessageString} </span>&nbsp;&nbsp; File Download: <span style='color:yellow'>{downloadFiles.upper()}</span> &nbsp;&nbsp; Avatar: <span style='color:yellow'>{userAvatar.upper()}</span></span> </div><br>"
-
-
+htmlheader += f"<div class='cssRoomName'>   {roomName}&nbsp;&nbsp;&nbsp;<br><span style='float:left;margin-top:8px;font-size:10px;color:#fff'> CREATED: <span style='color:yellow'>{currentDate}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Generated by: <span style='color:yellow'>{myName}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Message timezone: <span style='color:yellow'>{TimezoneName}</span>&nbsp;&nbsp;&nbsp; version:  {version}&nbsp;&nbsp;&nbsp;<br>Sort old-new: <span style='color:yellow'>" + str(
+    sortOldNew).replace("True", "yes (default)").replace("False",
+                                                         "no") + f"</span> &nbsp;&nbsp; Max messages: <span style='color:yellow'> {maxMessageString} </span>&nbsp;&nbsp; File Download: <span style='color:yellow'>{downloadFiles.upper()}</span> &nbsp;&nbsp; Avatar: <span style='color:yellow'>{userAvatar.upper()}</span></span> </div><br>"
 
 # ====== GENERATE FINAL HTML ===================================================
 #  for all messages (and optionally a .txt file with all messages)
 #
 startTimer()
-print(f" #7 --- Generate HTML code for {statTotalMessages} messages" + (" AND downloading all " + downloadFiles if downloadFiles in ['images', 'files'] else ""))
+print(f" #7 --- Generate HTML code for {statTotalMessages} messages" + (
+    " AND downloading all " + downloadFiles if downloadFiles in ['images', 'files'] else ""))
 htmldata = ""
 textOutput = ""
 if outputToText:
-    textOutput += f"------------------------------------------------------------\n {roomName}\n------------------------------------------------------------\nCREATED:        {currentDate}\nFile Download:  {downloadFiles.upper()}\nGenerated by:   {myName}\nSort old-new:   " + str(sortOldNew).replace("True", "yes (default)").replace("False", "no") + f"\nMax messages:   {maxMessageString}\nAvatar:         {userAvatar} \nversion:        {version} \nTimezone:           {TimezoneName}"
+    textOutput += f"------------------------------------------------------------\n {roomName}\n------------------------------------------------------------\nCREATED:        {currentDate}\nFile Download:  {downloadFiles.upper()}\nGenerated by:   {myName}\nSort old-new:   " + str(
+        sortOldNew).replace("True", "yes (default)").replace("False",
+                                                             "no") + f"\nMax messages:   {maxMessageString}\nAvatar:         {userAvatar} \nversion:        {version} \nTimezone:           {TimezoneName}"
 statTotalMentions = 0
 
 startTimer()
-sortedMessages = sorted(WebexMessages, key = lambda i: i['created'],reverse=False)
+sortedMessages = sorted(WebexMessages, key=lambda i: i['created'], reverse=False)
 stopTimer("sort WebexMessages")
 
 startTimer()
@@ -1218,9 +1242,9 @@ stopTimer("create threading order table")
 
 # --- Sort Messages: process all msgs defined by the "threading index"-table order
 if sortOldNew:
-    abc = sorted(msgOrderTable , key = lambda x : (float(x),-int(float(x))))
+    abc = sorted(msgOrderTable, key=lambda x: (float(x), -int(float(x))))
 else:
-    abc = sorted(msgOrderTable , key = lambda x : (-int(float(x)),float(x)))
+    abc = sorted(msgOrderTable, key=lambda x: (-int(float(x)), float(x)))
 
 # progress bar:
 mycounter = 0
@@ -1228,19 +1252,19 @@ progress_steps = int(statTotalMessages / 21)
 
 # --- PROCESS EVERY MESSAGE ----------------------------------------------------
 for index, key in enumerate(abc):
-    mycounter +=1
-    current_step = mycounter/progress_steps
+    mycounter += 1
+    current_step = mycounter / progress_steps
     if (current_step - int(current_step)) == 0:
         current_step = int(current_step)
         sys.stdout.write('\r')
         # the exact output you're looking for:
-        sys.stdout.write("          [%-20s] %d%%" % ('='*current_step, 5*current_step))
+        sys.stdout.write("          [%-20s] %d%%" % ('=' * current_step, 5 * current_step))
         sys.stdout.flush()
     # find matching message ID in message list
     msg = next(item for item in WebexMessages if item["id"] == msgOrderTable[key])
     try:
-        nextitem = float(abc[index+1])
-        previousitem = float(abc[index-1])
+        nextitem = float(abc[index + 1])
+        previousitem = float(abc[index - 1])
         currentitem = float(abc[index])
         if previousitem - round(previousitem) == 0 and currentitem - round(currentitem) > 0:
             # START of threaded message!
@@ -1257,22 +1281,22 @@ for index, key in enumerate(abc):
 
     # --- continue processing messages
     if len(msg) < 5:
-        continue        # message empty
+        continue  # message empty
     data_text = ""
     # --- if msg was updated: add 'Edited' in date
     if "updated" in msg:
         data_msg_was_edited = True
-        data_created = convertDate(str(msg['created']),UTChourDelta) + "  Edited"
+        data_created = convertDate(str(msg['created']), UTChourDelta) + "  Edited"
     else:
         data_msg_was_edited = False
-        data_created = convertDate(str(msg['created']),UTChourDelta)
+        data_created = convertDate(str(msg['created']), UTChourDelta)
     # --- HTML in message? Deal with markdown
     if "html" in msg:
         msg['text'] = ""
         # --- Check if there are Markdown hyperlinks [linktext](www.cisco.com) as these look very different
         if "sparkBase.clickEventHandler(event)" in str(msg['html']):
-            data_text = convertMarkdownURL(str(msg['html']),1)
-            data_text = convertMarkdownURL(data_text,2)
+            data_text = convertMarkdownURL(str(msg['html']), 1)
+            data_text = convertMarkdownURL(data_text, 2)
         else:
             data_text = convertURL(str(msg['html']))
             if "onClick" in msg['html']:
@@ -1280,7 +1304,7 @@ for index, key in enumerate(abc):
     elif 'text' in msg:
         data_text = convertURL(str(msg['text']))
         # --- Replace script in 'text' message (it stops HTML generation) - 0.21
-        data_text = data_text.replace("<script","<pre>&lt;")
+        data_text = data_text.replace("<script", "<pre>&lt;")
         if "<code>" in data_text:
             if "</code>" not in data_text:
                 data_text += "</code>"
@@ -1303,36 +1327,40 @@ for index, key in enumerate(abc):
         statMessageMonthKey, 0) + 1
     if messageMonth != previousMonth and not threaded_message:
         htmldata += f"<div class='cssNewMonth' id='{statMessageMonthKey}'>   {messageYear}    <span style='color:#C3C4C7'>" + \
-            messageMonth + "</span></div>"
+                    messageMonth + "</span></div>"
         if outputToText:  # for .txt output
             textOutput += f"\n\n---------- {messageYear}    {messageMonth} ------------------------------\n\n"
     # ====== if PREVIOUS email equals current email, then skip header
-    if threaded_message: # ___________________________________ start thread ______________________________
+    if threaded_message:  # ___________________________________ start thread ______________________________
         htmldata += "<div class='css_message_thread'>"
     else:
         htmldata += "<div class='css_message'>"
 
     # ====== AVATAR: + msg header: display or not
-    if (data_email != previousEmail) or (data_email == previousEmail and timedifference(msg["created"], previousMsgCreated) > 60) or (data_msg_was_edited):
+    if (data_email != previousEmail) or (
+            data_email == previousEmail and timedifference(msg["created"], previousMsgCreated) > 60) or (
+    data_msg_was_edited):
         if userAvatar == "link" and data_userid in userAvatarDict:
             htmldata += f"<img src='{userAvatarDict[data_userid]}' class='avatarCircle'  width='36px' height='36px'/>"
         elif userAvatar == "download" and data_userid in userAvatarDict:
             htmldata += f"<img src='avatars/" + data_userid + ".jpg' class='avatarCircle'  width='36px' height='36px'/>"
-        else: # User that may not exist anymore --> use email as name
+        else:  # User that may not exist anymore --> use email as name
             if data_name == data_email:
                 htmldata += f"<div id='avatarCircle'>{data_name[0:2].upper()}</div>"
             else:
                 # show circle with initials instead of avatar
                 try:
-                    htmldata += "<div id='avatarCircle'>" + data_name.split(" ")[0][0].upper() + data_name.split(" ")[1][0].upper()+ "</div><div class='css_message'>"
+                    htmldata += "<div id='avatarCircle'>" + data_name.split(" ")[0][0].upper() + \
+                                data_name.split(" ")[1][0].upper() + "</div><div class='css_message'>"
                 except:  # Sometimes there's no "first/last" name. If one word, take the first 2 characters.
                     htmldata += "<div id='avatarCircle'>" + data_name[0:2].upper() + "</div>"
 
-        msgDomain = data_email.split("@")[1]    # Get message sender domain
-        if myDomain == msgDomain:               # If domain <> own domain, use different color
+        msgDomain = data_email.split("@")[1]  # Get message sender domain
+        if myDomain == msgDomain:  # If domain <> own domain, use different color
             htmldata += f"<span class='css_email' title='{data_email}'>{data_name}</span>"
         else:
-            htmldata += "<span class='css_email' title='" + data_email + "'>" + data_name + "</span>   <span class='css_email_external'>(@" + data_email.split("@")[1] + ")</span>"
+            htmldata += "<span class='css_email' title='" + data_email + "'>" + data_name + "</span>   <span class='css_email_external'>(@" + \
+                        data_email.split("@")[1] + ")</span>"
         htmldata += f"<span class='css_created'>{data_created}</span>"
     else:
         htmldata += "<div class='css_message'>"
@@ -1346,8 +1374,8 @@ for index, key in enumerate(abc):
             statTotalMentions += 1
             for item in msg['mentionedPeople']:
                 texttoreplace = "<spark-mention data-object-type=\"person\" data-object-id=\"" + item + "\">"
-                data_text = data_text.replace(texttoreplace,"<span style='color:red;display:inline;'>@")
-            data_text = data_text.replace("</spark-mention>","</span>")
+                data_text = data_text.replace(texttoreplace, "<span style='color:red;display:inline;'>@")
+            data_text = data_text.replace("</spark-mention>", "</span>")
         except:
             print(" **ERROR** processing mentions, don't worry, I will continue")
     if 'mentionedGroups' in msg:
@@ -1355,8 +1383,8 @@ for index, key in enumerate(abc):
             statTotalMentions += 1
             for item in msg['mentionedGroups']:
                 texttoreplace = "<spark-mention data-object-type=\"groupMention\" data-group-type=\"" + item + "\">"
-                data_text = data_text.replace(texttoreplace,"<span style='color:red;display:inline;'>@")
-            data_text = data_text.replace("</spark-mention>","</span>")
+                data_text = data_text.replace(texttoreplace, "<span style='color:red;display:inline;'>@")
+            data_text = data_text.replace("</spark-mention>", "</span>")
         except:
             print(" **ERROR** processing mentions, don't worry, I will continue")
     # check if msg is a card. If yes: prefix
@@ -1379,9 +1407,9 @@ for index, key in enumerate(abc):
     if 'files' in msg:
         if data_text != "":
             htmldata += "<br>"
-        myFiles = process_Files(msg['files'],msg['created'])
+        myFiles = process_Files(msg['files'], msg['created'])
         # SORT attached files by <files> _then_ <images>
-        myFiles.sort(key = lambda x: x.split("###")[0].split(".")[-1] in ['jpg','png','jpeg','bmp','gif','tif'])
+        myFiles.sort(key=lambda x: x.split("###")[0].split(".")[-1] in ['jpg', 'png', 'jpeg', 'bmp', 'gif', 'tif'])
         splitFilesImages = ""
         for filename in myFiles:
             # IMAGE POPUP
@@ -1403,15 +1431,16 @@ for index, key in enumerate(abc):
                 statTotalFiles += 1
             if outputToText:  # for .txt output
                 textOutput += f"                           Attachment: {filename} ({filesize})\n"
-        htmldata += "</span>"    # filesize or mention /span?
-    htmldata += "</div>"    # css_messagetext ?
-    htmldata += "</div>"    # css_message or css_message_thread?
-    htmldata += "</div>"    #
+        htmldata += "</span>"  # filesize or mention /span?
+    htmldata += "</div>"  # css_messagetext ?
+    htmldata += "</div>"  # css_message or css_message_thread?
+    htmldata += "</div>"  #
     previousEmail = data_email
     if not threaded_message:
         previousMonth = messageMonth
     previousMsgCreated = msg['created']
-stopTimer("generate HTML messages (" + str(statTotalMessages) + ")" + (" & downloading all " + downloadFiles if downloadFiles in ['images', 'files'] else ""))
+stopTimer("generate HTML messages (" + str(statTotalMessages) + ")" + (
+    " & downloading all " + downloadFiles if downloadFiles in ['images', 'files'] else ""))
 
 # ======  *SORT* DOMAIN USER STATISTICS
 startTimer()
@@ -1421,7 +1450,6 @@ myDomainStatsSorted = myDomainStatsSorted[0:10]  # only want the top 10
 returntextDomain = ""
 returntextMsgMonth = ""
 stopTimer("sorting messages")
-
 
 # ======  TABLE OF CONTENTS
 startTimer()
@@ -1437,7 +1465,10 @@ for k, v in mytest:
     if "Jan" not in k[10:]:
         tocList += "<tr><td>"
     else:
-        tocList += "</table><br><a href='javascript:;' onclick=show('" + k[0:4] + "') style='text-decoration: none;font-weight:bolder;font-size'> <div id='yeararrow" + k[0:4] + "'>⇊</div>  " + k[0:4] + "</span></a><br><br>"
+        tocList += "</table><br><a href='javascript:;' onclick=show('" + k[
+                                                                         0:4] + "') style='text-decoration: none;font-weight:bolder;font-size'> <div id='yeararrow" + k[
+                                                                                                                                                                      0:4] + "'>⇊</div>  " + k[
+                                                                                                                                                                                             0:4] + "</span></a><br><br>"
         tocList += "<table id='expand year-" + k[0:4] + "' style='width: 220px;'>"
         tocList += "<tr><td>"
     tocList += "<a href='#" + k + "'>" + k[0:6] + " " + k[10:] + "</a></td>"
@@ -1449,13 +1480,11 @@ if not sortOldNew: messageType = "last"
 tocList += "<tr><td colspan='2'>&nbsp;&nbsp;&nbsp;<span style='font-size:11px;'><a href='#endoffile'>" + messageType + " message</a></span></td></tr>"
 tocList += "</table>"
 
-
 # ======  DOMAIN MESSAGE STATISTICS
 returntextDomain += "<table id='mytoc' style='width: 220px;'>"
 for domain in myDomainStatsSorted:
     returntextDomain += f"<tr><td>{domain[1]}</td><td style='text-align:right;'>{domain[0]:,}</td>"
 returntextDomain += "</table>"
-
 
 # ======  MESSAGE & FILE STATISTICS
 tocStats = "<table id='mytoc' style='width: 250px;'>"
@@ -1465,7 +1494,7 @@ tocStats += f"<tr><td> # files: </td><td style='text-align:right;'> {statTotalFi
 tocStats += f"<tr><td># mentions: </td><td style='text-align:right;'> {statTotalMentions:,} </td></tr>"
 tocStats += f"<tr><td># total members: </td><td style='text-align:right;'> {len(myMembers):,} </td></tr>"
 tocStats += f"<tr><td># active members: <br>&nbsp;&nbsp;&nbsp;<span style='font-size:11px;'>(in this archive)</span> </td><td style='text-align:right;'> {len(uniqueUserIds):,} </td></tr>"
-if statTotalMessages > maxTotalMessages -10:
+if statTotalMessages > maxTotalMessages - 10:
     tocStats += f"<tr><td colspan='2'><br><span style='color:grey;font-size:10px;'>space contains more than  {statTotalMessages:,} messages</span></td></tr>"
 tocStats += "</table>"
 if outputToText:  # for .txt output
@@ -1522,7 +1551,6 @@ print("\n #8 --- Finalizing HTML")
 htmldata = htmlheader + newtocList + htmldata + htmlfooter + imagepopuphtml + "</body></html>"
 stopTimer("generate ToC, statistics, header and footer")
 
-
 # ======  WRITE to HTML FILE
 startTimer()
 with open(myOutputFolder + "/" + outputFileName + ".html", 'w', encoding='utf-8') as f:
@@ -1534,18 +1562,16 @@ if outputToText:
     with open(myOutputFolder + "/" + outputFileName + ".txt", 'w', encoding='utf-8') as f:
         print(textOutput, file=f)
 
-
 if printPerformanceReport:
     msg_time = int(performanceReport.split("order table")[1].split(" generate HTML")[0].lstrip().split(".")[0])
     if msg_time == 0:
         msg_time = 1
-    msg_nr   = int(performanceReport.split(" (")[1].split(")")[0])
+    msg_nr = int(performanceReport.split(" (")[1].split(")")[0])
     msg_statsline = performanceReport.split("order table")[1].split(")")[0].lstrip() + ")"
-    msg_per_sec = msg_nr/msg_time
-    msg_statsline_new = msg_statsline.replace(")",f" msg, {msg_per_sec:.0f} msg/sec)")
-    performanceReport = performanceReport.replace(msg_statsline,msg_statsline_new)
+    msg_per_sec = msg_nr / msg_time
+    msg_statsline_new = msg_statsline.replace(")", f" msg, {msg_per_sec:.0f} msg/sec)")
+    performanceReport = performanceReport.replace(msg_statsline, msg_statsline_new)
     print(f"{performanceReport}\n\n")
-
 
 # ======  PRINT ERROR LIST
 if len(myErrorList) > 0 and printErrorList:
